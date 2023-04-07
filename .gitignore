@@ -7,3 +7,4 @@ Makefile
 nbprojects/
 build/
 dist/
+debug/

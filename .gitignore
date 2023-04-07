@@ -1,0 +1,9 @@
+*.zip
+*.mk
+.xml
+.elf
+.map
+Makefile
+nbprojects/
+build/
+dist/

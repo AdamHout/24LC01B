@@ -94,8 +94,9 @@ int main(void) {
    
    //Write and read byte functions
    errCode = lc01b_WriteByte(memByte,byteOut); 
-   
-   if(!errCode)                                                                 //Error?
+   if(errCode)                                                                  //Error?
+       errHandler();
+   else
       errCode = lc01b_ReadByte(memByte,&byteIn);                                //No.. read the byte back
    
    //Fill the EEPROM with the ASCII table via page writes
@@ -112,14 +113,19 @@ int main(void) {
    }
    
    //Read the entire ROM sequentially
-   lc01b_ReadSeq(0x00,LC01B_CAP,dataIn);
+   if(errCode)
+       errHandler();
+   else
+      lc01b_ReadSeq(0x00,LC01B_CAP,dataIn);
    
    //Write and read a floating point number
    float pi = 3.14;
    float x;
    
    errCode = lc01b_WriteObject(0x00,sizeof(pi),&pi);                            //Write the float
-   if(!errCode)
+   if(errCode)
+       errHandler();
+   else
       lc01b_ReadObject(0x00,sizeof(x),&x);                                      //Read the float back
    
    //Write/read a two byte unsigned integer
@@ -127,11 +133,13 @@ int main(void) {
    uint16_t y;
    
    errCode = lc01b_WriteObject(0x10,sizeof(twoByte),&twoByte);
-   if(!errCode)
+   if(errCode)
+       errHandler();
+   else
       lc01b_ReadObject(0x10,sizeof(y),&y);
    
    //Generate a bounds error
-   errCode = lc01b_WriteByte(0x80,'X');
+   errCode = lc01b_WritePage(0x7D,LC01B_PAGE,dataOut);
    
    if(errCode)
        errHandler();

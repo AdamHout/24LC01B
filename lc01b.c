@@ -45,7 +45,7 @@ void lc01b_SCM(uint8_t ee_addr){
    while(I2C1STATbits.ACKSTAT);
 }
 
-//---------------------------------------------------------------p
+//---------------------------------------------------------------
 //Write a byte to the LC01B at the desired address
 //---------------------------------------------------------------
 ee_Errors_t lc01b_WriteByte(uint8_t ee_addr,uint8_t dataByte){
@@ -98,6 +98,9 @@ ee_Errors_t lc01b_WritePage(uint8_t ee_addr,uint8_t dataLen,uint8_t *pDataBuf){
   return ERR_NONE;
 }
 
+//---------------------------------------------------------------
+//Write multi-byte length variables to the EEPROM
+//---------------------------------------------------------------
 ee_Errors_t lc01b_WriteObject(uint8_t ee_addr,uint8_t objLen,void *pObj){
    
    uint8_t *pByte = pObj;
@@ -112,6 +115,9 @@ ee_Errors_t lc01b_WriteObject(uint8_t ee_addr,uint8_t objLen,void *pObj){
    return ERR_NONE;
 }
 
+//---------------------------------------------------------------
+//Read a single byte from the EEPROM
+//---------------------------------------------------------------
 ee_Errors_t lc01b_ReadByte(uint8_t ee_addr, uint8_t *pData){
    
   if(ee_addr > LC01B_MAX_ADR)
@@ -143,7 +149,10 @@ ee_Errors_t lc01b_ReadByte(uint8_t ee_addr, uint8_t *pData){
    return ERR_NONE;
 }
 
-
+//---------------------------------------------------------------
+//Read a specified number of sequential bytes beginning from
+//the supplied address
+//---------------------------------------------------------------
 ee_Errors_t lc01b_ReadSeq(uint8_t ee_addr,uint8_t readLen,uint8_t *pDataBuf){
    
    if(ee_addr > LC01B_MAX_ADR + readLen)
@@ -181,6 +190,9 @@ ee_Errors_t lc01b_ReadSeq(uint8_t ee_addr,uint8_t readLen,uint8_t *pDataBuf){
    return ERR_NONE;
 }
 
+//---------------------------------------------------------
+//Read multi-byte length variables from the EEPROM
+//---------------------------------------------------------
 ee_Errors_t lc01b_ReadObject(uint8_t ee_addr,uint8_t objLen, void *pObj){
    
    uint8_t *pByte = pObj;
@@ -195,7 +207,9 @@ ee_Errors_t lc01b_ReadObject(uint8_t ee_addr,uint8_t objLen, void *pObj){
    return ERR_NONE;
 }
 
+//-----------------------------------------------------------
 //Acknowledge poll the EEPROM until the write cycle completes
+//-----------------------------------------------------------
 void ack_Poll(){
    do{
       I2C1CONbits.SEN = 1;                                                      //Start enable
@@ -205,7 +219,9 @@ void ack_Poll(){
    }while(I2C1STATbits.ACKSTAT);                                                //Repeat until ACK'd
 }  
 
-
+//------------------------------------------------------------
+//Set the baud rate and enable I2C1
+//------------------------------------------------------------
 void init_I2C(uint8_t BRG){
    I2C1CON = 0x0000;
    I2C1BRG = BRG;

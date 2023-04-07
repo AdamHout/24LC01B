@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-
+//I2C baud rate selection values
 #define I2C_BRG_100 157                                                         //100kHz bus: FCY = 16MHz
 #define I2C_BRG_400 37                                                          //400kHz bus: FCY = 16MHz
     
@@ -55,7 +55,7 @@ ee_Errors_t lc01b_WriteByte(uint8_t,uint8_t);
 //--------------------------------------------------------
 // Receives: Memory address, page length and a pointer to 
 //           the data to be written
-// Returns:  Nothing
+// Returns:  Status of bounds check
 // Summary:  Writes a page to the EEPROM. A page on the
 //           LC01B can be to to eight bytes in length
 //---------------------------------------------------------
@@ -63,7 +63,7 @@ ee_Errors_t lc01b_WritePage(uint8_t,uint8_t,uint8_t *);
 
 //--------------------------------------------------------
 // Receives: Memory address, object length and data object
-// Returns:  Nothing
+// Returns:  Status of bounds check
 // Summary:  Used to write larger data types such as int, 
 //           float, double etc.. to the EEPROM byte by byte
 //--------------------------------------------------------
@@ -71,7 +71,7 @@ ee_Errors_t lc01b_WriteObject(uint8_t,uint8_t,void *);
 
 //--------------------------------------------------------
 // Receives: Memory address and address for data byte
-// Returns:  Byte from the requested address
+// Returns:  Status of bounds check
 // Summary:  Random access read of a single byte
 //--------------------------------------------------------
 ee_Errors_t lc01b_ReadByte(uint8_t,uint8_t *);
@@ -79,7 +79,7 @@ ee_Errors_t lc01b_ReadByte(uint8_t,uint8_t *);
 //--------------------------------------------------------
 // Receives: Memory address, read length and pointer to a 
 //           buffer to write the output into
-// Returns:  Nothing
+// Returns:  Status of bounds check
 // Summary:  Sequentially reads the requested number of
 //           bytes from the EEPROM, beginning at the 
 //           specified address. Output is stored in the
@@ -90,7 +90,7 @@ ee_Errors_t lc01b_ReadSeq(uint8_t,uint8_t,uint8_t *);
 //--------------------------------------------------------
 // Receives: Memory address, data length and a pointer to
 //           a data object to write the output into
-// Returns:  Nothing
+// Returns:  Status of bounds check
 // Summary:  Reads the specified number of bytes from the 
 //           EEPROM and writes the output to the data
 //           object provided by the client

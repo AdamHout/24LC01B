@@ -75,9 +75,7 @@ ee_Errors_t lc01b_WriteByte(uint8_t ee_addr,uint8_t dataByte){
 //---------------------------------------------------------------
 ee_Errors_t lc01b_WritePage(uint8_t ee_addr,uint8_t dataLen,uint8_t *pDataBuf){
    
-  
-   
-  if(ee_addr > LC01B_MAX_ADR + dataLen)
+  if((ee_addr + dataLen) > LC01B_MAX_ADR)
       return ERR_MEM_BOUNDS;
   else{
       //Address the EEPROM
@@ -105,7 +103,7 @@ ee_Errors_t lc01b_WriteObject(uint8_t ee_addr,uint8_t objLen,void *pObj){
    
    uint8_t *pByte = pObj;
    
-   if(ee_addr > LC01B_MAX_ADR + objLen)
+   if((ee_addr + objLen) > LC01B_MAX_ADR)
        return ERR_MEM_BOUNDS;
    else{
       while(objLen--){
@@ -155,7 +153,7 @@ ee_Errors_t lc01b_ReadByte(uint8_t ee_addr, uint8_t *pData){
 //---------------------------------------------------------------
 ee_Errors_t lc01b_ReadSeq(uint8_t ee_addr,uint8_t readLen,uint8_t *pDataBuf){
    
-   if(ee_addr > LC01B_MAX_ADR + readLen)
+   if((ee_addr + readLen) > LC01B_MAX_ADR)
        return ERR_MEM_BOUNDS;
    else{
       //Address the EEPROM
@@ -197,7 +195,7 @@ ee_Errors_t lc01b_ReadObject(uint8_t ee_addr,uint8_t objLen, void *pObj){
    
    uint8_t *pByte = pObj;
    
-   if(ee_addr > LC01B_MAX_ADR + objLen)
+   if((ee_addr + objLen) > LC01B_MAX_ADR)
        return ERR_MEM_BOUNDS;
    else{
       while(objLen--){

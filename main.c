@@ -11,12 +11,17 @@
  * MCP24LC01B 1kbit EEPROM
  * *****************************************************************************
  * Pointers:
- * This program exercises the lc01b library
+ * This program demonstrates the lc01b library
+ * MCU has a 256 word (16-bit) internal EEPROM
  * *****************************************************************************
  * Revisions:
  * 
  * Date                        Comments
+ * -----------------------------------------------------------------------------
  * 02/23  Adam Hout            Original source
+ * -----------------------------------------------------------------------------
+ * 04/23 Hout                  Add logic to copy the contents of the LC01B
+ *                             into the PIC24F16KA102's internal EEPROM
  ******************************************************************************/
 
 // PIC24F16KA102 Configuration Bit Settings
@@ -65,58 +70,56 @@
 //Includes
 #include "xc.h"
 #include "sys.h"
-#include "lc01b.h"
+#include "lc01b.h"                                                              //MCP24LC01B EEPROM library
+#include "obeeprom.h"                                                           //PIC24F on board EEPROM library
 #include <libpic30.h>
+#include <string.h>
 
+//Status LED pin defines
 #define LED_T TRISBbits.TRISB15
 #define LED_L LATBbits.LATB15
+#define NBR_PAGES LC01B_CAP/LC01B_PAGE
 
+//Function declarations
 void errHandler(void);
 
+//---------------------------------------------
+// Begin mainline logic
+//---------------------------------------------
 int main(void) {
    
-   uint8_t ctr;
-   uint8_t memByte = 0x00;
-   uint8_t byteOut = 0x45;
-   uint8_t byteIn;
-   uint8_t dataOut[128];
-   uint8_t *pPage = dataOut;
-   uint8_t dataIn[128];
+    //Variables for the demo logic
+   uint8_t  ctr, idx;
+   uint8_t  memByte = 0x00;
+   uint8_t  byteOut = 0x45;
+   uint8_t  byteIn;
+   uint8_t  dataOut[LC01B_CAP];
+   uint8_t  dataIn[LC01B_CAP];
+   uint8_t  *pPage = dataOut;
+   uint16_t wordIn; 
+   uint16_t dataWords[NUM_WORDS];    
+   uint64_t bigUn;
    
-   ee_Errors_t errCode;                                                         //Enumerated error list
+   //Enumerated error list
+   ee_Errors_t errCode;                                                         
    
    
+   //Init status LED
    LED_T = 0;                                                                   //Set pin as output
    LED_L = 1;                                                                   //Turn LED on
    
    //Enable I2C with a 100kHz clock
    init_I2C(I2C_BRG_100);
    
+   //--------------------------------------------------
+   //Begin MCP24LC01B demo logic
+   //--------------------------------------------------
    //Write and read byte functions
    errCode = lc01b_WriteByte(memByte,byteOut); 
    if(errCode)                                                                  //Error?
        errHandler();
    else
       errCode = lc01b_ReadByte(memByte,&byteIn);                                //No.. read the byte back
-   
-   //Fill the EEPROM with the ASCII table via page writes
-   for (ctr=0;ctr<128;ctr++){                                                   //Fill the output buffer
-      dataOut[ctr] = ctr;                                                       //0x00 - 0x7F
-   }
-   
-   for(ctr=0;ctr<LC01B_CAP/LC01B_PAGE;ctr++){                                   //Page writes to the EEPROM
-      errCode = lc01b_WritePage(memByte,LC01B_PAGE,pPage);
-      if(errCode)                                                               //Break on an error
-          break;
-      pPage += LC01B_PAGE;                                                      //Ref the next page to send
-      memByte += LC01B_PAGE;                                                    //Bump the EEPROM address
-   }
-   
-   //Read the entire ROM sequentially
-   if(errCode)
-       errHandler();
-   else
-      lc01b_ReadSeq(0x00,LC01B_CAP,dataIn);
    
    //Write and read a floating point number
    float pi = 3.14;
@@ -128,22 +131,79 @@ int main(void) {
    else
       lc01b_ReadObject(0x00,sizeof(x),&x);                                      //Read the float back
    
-   //Write/read a two byte unsigned integer
-   uint16_t twoByte = 53207;
-   uint16_t y;
+   //Write/read a 64-bit unsigned integer
+   bigUn = 1844674407370955161;
    
-   errCode = lc01b_WriteObject(0x10,sizeof(twoByte),&twoByte);
+   errCode = lc01b_WriteObject(0x10,sizeof(bigUn),&bigUn);
+   if(errCode)
+       errHandler();
+   else{
+      bigUn = 0;
+      lc01b_ReadObject(0x10,sizeof(bigUn),&bigUn);
+   }
+   
+   //Fill the EEPROM with the ASCII table via page writes
+   for (ctr=0;ctr<LC01B_CAP;ctr++){                                             //Fill the output buffer
+      dataOut[ctr] = ctr;                                                       //0x00 - 0x7F
+   }
+   
+   for(ctr=0;ctr<NBR_PAGES;ctr++){                                              //Page writes to the EEPROM
+      errCode = lc01b_WritePage(memByte,LC01B_PAGE,pPage);
+      if(errCode)                                                               //Break on an error
+          break;
+      pPage += LC01B_PAGE;                                                      //Ref the next page to send
+      memByte += LC01B_PAGE;                                                    //Bump the EEPROM address
+   }
+   
+   //Read the entire LC01B sequentially
    if(errCode)
        errHandler();
    else
-      lc01b_ReadObject(0x10,sizeof(y),&y);
+      lc01b_ReadSeq(0x00,LC01B_CAP,dataIn);
    
-   //Generate a bounds error
-   errCode = lc01b_WritePage(0x7D,LC01B_PAGE,dataOut);
    
-   if(errCode)
-       errHandler();
+   //---------------------------------------------
+   //Begin PIC24F on-board EEPROM demo logic
+   //---------------------------------------------
+   //Write to the fist and last EEPROM words
+   obee_Write(EE_WRITE_ER,OFFSET_ZERO,0xDEAD);
+   obee_Write(EE_WRITE_ER,OFFSET_LAST,0xDEAD);
    
+   //Read back the first and last EEPROM words
+   wordIn = obee_Read(OFFSET_ZERO);
+   wordIn = obee_Read(OFFSET_LAST);
+   
+   //Copy 24LC01B contents into the PIC24F on-board EEPROM   
+   for(ctr=0; ctr<LC01B_CAP; ctr+=WORD_LEN){
+      memcpy(&wordIn,&dataIn[ctr],WORD_LEN);
+      obee_Write(EE_WRITE_ER,ctr,wordIn);
+   }
+   
+   //Read the contents back
+   idx = 0;
+   for(ctr=0; ctr<LC01B_CAP; ctr+=WORD_LEN){
+      dataWords[idx++] = obee_Read(ctr);
+   }
+    
+   //Erase words 12-15; 0x7FFE16 - 0x7FFE1C
+   obee_Erase(EE_ERASE_FOUR,24);                                                //24 byte offset
+   
+   //Read the 1st 64 words (128 bytes) of the EEPROM sequentially
+   obee_ReadSeq(0,128,dataWords);
+   
+   //Bulk erase the entire contents of the on-board EEPROM
+   obee_Erase(EE_ERASE_BULK,0);
+   
+   //Fill the EEPROM contents with 0xA5A5
+   //Using program only bit (NVMCONbits.pgmonly). Memory already erased
+   memset(dataWords,0xA5A5,512);
+   obee_WriteSeq(EE_WRITE_NOE,OFFSET_ZERO,512,dataWords);                       //No erase
+   
+   //Read back the contents
+   memset(dataWords,0x0000,512);
+   obee_ReadSeq(OFFSET_ZERO,512,dataWords);
+   
+   //Demo complete
    while(1);
    return 0;
 }
